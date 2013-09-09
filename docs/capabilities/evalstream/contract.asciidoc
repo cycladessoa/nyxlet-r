@@ -1,0 +1,228 @@
+////////////////////////////////////////////////////////////////////////////////
+Copyright (c) 2012, THE BOARD OF TRUSTEES OF THE LELAND STANFORD JUNIOR UNIVERSITY
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+   Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+   Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+   Neither the name of the STANFORD UNIVERSITY nor the names of its contributors
+   may be used to endorse or promote products derived from this software without
+   specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+////////////////////////////////////////////////////////////////////////////////
+
+= Service Capability Contract: evalstream
+:toc:
+
+== Document Version
+1.0
+
+== Intent
+The intent of this document is to provide a contract for consumer reference on use of this capability
+
+== Name
+evalstream
+
+== Description
+This capability is identical to the "eval" capability with the addition of the following:
+
+* Ability to POST a R script
+* Ability to return binary data, i.e. an image
+
+[NOTE]
+The utilization of these abilities renders this capabilities' request/response in a state where STROMA based orchestrations *may* be 
+compromised, as streams need to be handled properly. For full STROMA compatibility consider the "eval" capability. 
+
+== State Management
+This service capability is stateless, with the exception of any caching mechanisms provided to the R layer, like a RESTful cache,
+for example.
+
+== Setup Dependencies
+* link:http://www.r-project.org/[R] must be installed on the server that will be hosting this service for now, additional 
+capabilities to utilize remote R servers may be added later. 
+* The Rserve package must be installed within your R installation above...you can do this in R by running the command 
+_install.packages("Rserve")_ or _install.packages("Rserve",,"http://www.rforge.net/")_. Please see 
+link:http://www.rforge.net/Rserve/doc.html[Rserve documentation] for more details on Rserve configuration.
+* Please see property file specific to this service (conf/r.properties in the workspace) for details and options on configurations.
+
+== Additional Build/Runtime Library Dependencies
+* All build and runtime Rsession and Rserve dependencies can be found in the "lib" directory under the root of this project. You 
+can update these dependencies as needed to build and deploy with different versions. The following table displays the libraries
+included and their respective versions.
+
+[options="header"]
+|=========================================================
+|Library            |Version                                                    |Details
+|REngine.jar        |2013-08-27 11:13                                           |Rserve
+|RserveEngine.jar   |2013-08-27 11:13                                           |Rserve
+|Rsession.jar       |built from source workspace whose latest revision is r114  |Rsession
+|=========================================================
+
+== Owner
+TBD
+
+== Interface
+
+=== Interface Classification
+
+* STROMA
+* synchronous/asynchronous
+* HTTP
+
+=== Expected Input
+
+.Special URI rules
+
+* POSTing a R script to this capability will include it in the evaluation chain of R scripts submitted via other mechanisms (along 
+with the script and script-uri parameters). The R script submitted via POST will always run after the entries submitted via the 
+script-uri parameter (i.e script-uri | POST | script or  script | script-uri | POST if script-first is true). While the script and
+script-uri parameters are multi value (allow you to specifiy multiple ordered entries) you can only post one script.
+
+.test.R (a sample R script, simply create the file "test.R" with the following contents)
+----
+output=runif(10000,0,100)
+----
+
+.test_binary.R (a sample R script, simply create the file "test_binary.R" with the following contents)
+----
+downloadBytes<-function() {
+    file_name=paste0(guid, ".tmp")
+    download.file("http://www.google.com",file_name)
+    output=readBin(file_name,'raw',1024*1024)
+    unlink(file_name)
+    return(output)
+}
+
+output=downloadBytes()
+----
+
+.Example "curl" command POSTing an R script (test.R) and returning the contents of the R variable "output" in R format
+----
+curl -H "content-type:" --data-binary @./test.R 'http://localhost:8080/cyclades/r?data-type=xml&action=evalstream&duration&r-log-out'
+----
+
+.Example "curl" command POSTing an R script (test_binary.R) and returning the contents of the R variable "output" as binary data, such as an image
+----
+curl -H "content-type:" --data-binary @./test_binary.R 'http://localhost:8080/cyclades/r?data-type=xml&action=evalstream&output-native-java&binary-response' > index.html
+----
+
+[NOTE]
+See section below for parameter details.
+
+.Parameters (same as "eval")
+
+* *script* [optional, multi-value parameter] The actual text to run as a script. 
+* *script-uri* [optional, multi-value parameter] A URI, a file URI or a URL starting with "http:".
+* *script-first* [optional] If true, the *script* entries are evaluated first (before any *script-uri* entries, which run first by default).
+* *input* [optional] Input for R, either a String array of parameter values or the Object in the Map Channel key "input".
+* *use-map-channel* [optional] If true, the response (output) of this request will be contained in the MapChannel under the key "output".
+* *password* The password required to use this service, if one has been set.
+* *output-native-java* [optional] If true, the R specific Java Object will be transformed to a native Java Object, if applicable.
+* *r-log-out* [optional] If true, the output of R, if any, will be included as the response parameter named as the same.
+
+.Parameters (in addition to "eval")
+
+* *binary-response* [optional] If true, the output will be returned as an octet (binary) stream. This is typically used for 
+streaming back images and items of that nature generated by R. 
+
+[NOTE]
+There must be at least one script submitted for evaluation through any or all of the following mechanisms:
+* script parameter
+* script-uri parameter
+* POST body
+
+.Meta Data
+
+N/A
+
+[NOTE]
+The following are trivial examples to use as a reference. Please see STROMA/X-STROMA specification for details.
+
+==== XML request variations
+
+.input
+----
+http://localhost:8080/cyclades/r?data-type=xml&action=evalstream&script=output=runif(10,0,100)&r-log-out=true&duration=true
+----
+
+.output
+----
+<response service="r" action="evalstream" error-code="0">
+    <output>
+        [1] 85.210470 8.487201 13.965445 58.518566 46.086520 83.741234 60.278154 [8] 83.410146 70.518595 94.920174
+    </output>
+    <parameters>
+        <parameter name="r-log-out" value=""/>
+    </parameters>
+    <duration val="31"/>
+</response>
+----
+
+==== JSON request variations
+
+.input
+----
+http://localhost:8080/cyclades/r?data-type=json&action=evalstream&script=output=runif(10,0,100)&r-log-out=true&duration=true
+----
+
+.output
+----
+{"error-code":"0","service":"r","action":"evalstream","data":{"root":{"output":{"$":" [1] 98.2405646 88.0911640  3.6780343  0.3260683 52.2754610 18.5851061\n [7] 29.4500125 28.0433036 15.3941299 94.2855899"}}},"duration":"268"}
+----
+
+== R Script Integration
+
+* Make sure to set the "output" variable in your R script to the value that you wish to return via this capability, otherwise a
+default String message will be returned indicating it was not set 
+* The following variables are enabled for use in your R scripts
+    ** restfs: A base url that enables RESTful maintenance any resources
+    ** guid: A guaranteed unique guid generated for you
+* Please see r.properties for more information on how to enable static property forwarding to your R scripts if needed
+
+== Additional Orchestration Capability Details
+
+* MapChannel supported input and output ("input" and "output" keys, respectively). The MapChannel "input" key, if it exists, 
+takes priority over the STROMA parameter. Setting the "output" key in the MapChannel is enabled by setting the "use-map-channel" STROMA parameter to "true".
+
+== Functional Requirements
+
+* Providing engineers the capability to integrate R into any service work flow
+
+== Non Functional Requirements
+
+* SLA/QoS
+ - N/A
+
+* Security
+ - Simple password protection
+
+== Test Results
+* N/A
+////
+* link:load_test_results.html[Load Test Results]
+* link:extended_duration_test_results.html[Extended Duration Test Results]
+* link:functional_test_results.html[Functional Test Results]
+////
+
+== Modifications To This Document
+
+[options="header"]
+|=========================================================
+|Author             |Date       |Version    |Details
+|Tom Angelopoulos   |8/29/2013  |1.0        |Document Creation
+|=========================================================
