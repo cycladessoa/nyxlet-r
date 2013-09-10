@@ -30,10 +30,10 @@ A Cyclades Service Engine Nyxlet/service that provides *R as a service*. R is a 
 
 == Basic Features
 
-* Instant integration of R into you SOA and any orchestrations
+* Instant integration of R into your SOA suite and orchestrations
     ** STROMA compliant Action Handler link:docs/capabilities/eval/contract.asciidoc[eval]
     ** RESTful/streaming Action Handler link:docs/capabilities/evalstream/contract.asciidoc[evalstream]
-* Supplied Action Handlers (eval and evalstream) run against the actual R server installed on the host (by default), allowing clients of the service to maintain a closer level of parity to the actual R project
+* Supplied Action Handlers (eval and evalstream) run against the actual R server installed on the host (by default), providing clients a closer level of parity to the actual R project
 
 == Setup Dependencies
 
