@@ -58,9 +58,9 @@ capabilities to utilize remote R servers may be added later.
 * The Rserve package must be installed within your R installation above...you can do this in R by running the command 
 _install.packages("Rserve")_ or _install.packages("Rserve",,"http://www.rforge.net/")_. Please see 
 link:http://www.rforge.net/Rserve/doc.html[Rserve documentation] for more details on Rserve configuration.
-* Please see property file specific to this service (conf/r.properties in the workspace, or 
-../webapps/cyclades/WEB-INF/nyxlets/r.properties in your deployment) for details and options on configurations.
-    ** This is where you can set the *R_HOME* environment variable if needed.
+* Please see property file specific to this service (_conf/r.properties_ in the workspace, or 
+_../webapps/cyclades/WEB-INF/nyxlets/r.properties_ in your deployment) for details and options on configurations. This is where you
+can set the *R_HOME* environment variable if needed.
 
 == Additional Build/Runtime Library Dependencies
 * All build and runtime Rsession and Rserve dependencies can be found in the "lib" directory under the root of this project. You 
