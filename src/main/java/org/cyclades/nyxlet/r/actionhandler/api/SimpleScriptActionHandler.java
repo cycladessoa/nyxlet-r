@@ -66,7 +66,7 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             if (staticSessionPropertiesMap != null) s.set(staticSessionPropertiesMap);
             if (scriptInputObject != null) s.set(INPUT_PARAMETER, scriptInputObject);
             s.set(OUTPUT_PARAMETER, "output variable is not set");
-            s.set(GUID_VAR, tid.getTransactionID());
+            s.set(GUID_VAR, (baseParameters.containsKey(GUID_VAR)) ? baseParameters.get(GUID_VAR).get(0) : tid.getTransactionID());
             s.set(RESTFS_VAR, restfs);
             for (String script : scriptList) s.voidEval(script, false);    
             if (baseParameters.containsKey(OUTPUT_NATIVE_JAVA_PARAMETER)) return s.eval(OUTPUT_PARAMETER).asNativeJavaObject();
