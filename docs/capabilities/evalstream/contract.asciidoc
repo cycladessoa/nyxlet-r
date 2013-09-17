@@ -137,7 +137,7 @@ See section below for parameter details.
 * *output-native-java* [optional] If true, the R specific Java Object will be transformed to a native Java Object, if applicable.
 * *r-log-out* [optional] If true, the output of R, if any, will be included as the response parameter named as the same.
 * *output-list-string* [optional] If true, the R specific Java Object will be transformed to a native Java Object and then as a String representation of a list, if applicable.
-* *validate-output-meta-type* [optional, XML|JSON] If a value is specified, the response Object will be transformed into a String (via toString()) and an attempt will be made to parse it in the meta type specified (xml or json).
+* *validate-output-meta-type* [optional, XML|JSON] If a value is specified, the response Object will be transformed to a String (via toString()) and an attempt will be made to parse it in the meta type specified (xml or json).
 
 .Parameters (in addition to "eval")
 
