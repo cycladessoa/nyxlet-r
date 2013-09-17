@@ -33,7 +33,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import javax.xml.stream.XMLStreamWriter;
+import org.cyclades.engine.MetaTypeEnum;
 import org.cyclades.engine.NyxletSession;
 import org.cyclades.engine.nyxlet.templates.stroma.STROMANyxlet;
 import org.cyclades.engine.nyxlet.templates.stroma.actionhandler.ActionHandler;
@@ -43,6 +45,7 @@ import org.cyclades.engine.validator.OneOf;
 import org.cyclades.engine.validator.ParameterHasValue;
 import org.cyclades.engine.validator.ParameterMatches;
 import org.cyclades.io.ResourceRequestUtils;
+import org.cyclades.nyxlet.r.util.MetaType;
 import org.cyclades.nyxlet.r.util.PropertyUtils;
 import org.math.R.Logger.Level;
 import org.math.R.Rsession;
@@ -62,6 +65,7 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             Object scriptInputObject, RsessionOutput rOutput) throws Exception {
         Rsession s = null;
         try {
+            Object returnObject = null;
             s = Rsession.newInstanceTry(rOutput/*System.out*/, null);
             if (staticSessionPropertiesMap != null) s.set(staticSessionPropertiesMap);
             if (scriptInputObject != null) s.set(INPUT_PARAMETER, scriptInputObject);
@@ -69,10 +73,35 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             s.set(GUID_VAR, (baseParameters.containsKey(GUID_VAR)) ? baseParameters.get(GUID_VAR).get(0) : tid.getTransactionID());
             s.set(RESTFS_VAR, restfs);
             for (String script : scriptList) s.voidEval(script, false);    
-            if (baseParameters.containsKey(OUTPUT_NATIVE_JAVA_PARAMETER)) return s.eval(OUTPUT_PARAMETER).asNativeJavaObject();
-            return s.asString(OUTPUT_PARAMETER);
+            if (baseParameters.containsKey(OUTPUT_NATIVE_JAVA_PARAMETER)) {
+                returnObject = s.eval(OUTPUT_PARAMETER).asNativeJavaObject();
+            } else if (baseParameters.containsKey(OUTPUT_LIST_STRING_PARAMETER)) {
+                returnObject =  toListString(s.eval(OUTPUT_PARAMETER).asNativeJavaObject());
+            } else {
+                returnObject = s.asString(OUTPUT_PARAMETER);
+            }
+            if (baseParameters.containsKey(VALIDATE_OUTPUT_META_TYPE_PARAMETER)) 
+                if (!MetaType.validateAsMetaType(MetaTypeEnum.valueOf(baseParameters.get(VALIDATE_OUTPUT_META_TYPE_PARAMETER).get(0).toUpperCase()),
+                        returnObject)) throw new Exception("Response did not parse correctly for given meta data format: " + 
+                                baseParameters.get(VALIDATE_OUTPUT_META_TYPE_PARAMETER).get(0));
+            return returnObject;
         } finally {
             try { s.end(); } catch (Exception e) {}
+        }
+    }
+    
+    @SuppressWarnings("rawtypes")
+    private String toListString (Object structure) throws Exception {
+        if(structure instanceof Object[]) {
+            return Arrays.deepToString((Object[])structure);
+        } else if(structure instanceof double[]) {
+            return Arrays.toString(((double[])structure));
+        } else if(structure instanceof int[]) {
+            return Arrays.toString(((int[])structure));
+        } else if (structure instanceof Vector) {
+            return Arrays.deepToString(((Vector)structure).toArray());
+        } else {
+            return structure.toString();
         }
     }
         
@@ -191,6 +220,8 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
     public static final String HEALTH_CHECK_COMMAND_PROPERTY            = "health_check_command";
     public static final String HEALTH_CHECK_VALIDATION_TERM_PROPERTY    = "health_check_validation_term";
     public static final String STATIC_SESSION_PROPERTIES_PROPERTY       = "static_session_properties";
+    public static final String OUTPUT_LIST_STRING_PARAMETER             = "output-list-string";
+    public static final String VALIDATE_OUTPUT_META_TYPE_PARAMETER      = "validate-output-meta-type";
     
     protected TransactionIdentifier tid;
     protected String restfs;
