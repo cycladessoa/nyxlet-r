@@ -62,7 +62,7 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
     }
     
     public Object executeScripts(List<String> scriptList, Map<String, List<String>> baseParameters, 
-            Object scriptInputObject, RsessionOutput rOutput) throws Exception {
+            Object scriptInputObject, RsessionOutput rOutput, String guid) throws Exception {
         Rsession s = null;
         try {
             Object returnObject = null;
@@ -70,7 +70,7 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             if (staticSessionPropertiesMap != null) s.set(staticSessionPropertiesMap);
             if (scriptInputObject != null) s.set(INPUT_PARAMETER, scriptInputObject);
             s.set(OUTPUT_PARAMETER, "output variable is not set");
-            s.set(GUID_VAR, (baseParameters.containsKey(GUID_VAR)) ? baseParameters.get(GUID_VAR).get(0) : tid.getTransactionID());
+            s.set(GUID_VAR, guid);
             s.set(RESTFS_VAR, restfs);
             for (String script : scriptList) s.voidEval(script, false);    
             if (baseParameters.containsKey(OUTPUT_NATIVE_JAVA_PARAMETER)) {
@@ -88,6 +88,10 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
         } finally {
             try { s.end(); } catch (Exception e) {}
         }
+    }
+    
+    protected String guid (Map<String, List<String>> baseParameters) {
+        return (baseParameters.containsKey(GUID_VAR)) ? baseParameters.get(GUID_VAR).get(0) : tid.getTransactionID();
     }
     
     @SuppressWarnings("rawtypes")
@@ -133,7 +137,10 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
                 }
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Object out = executeScripts(scriptList, baseParameters, scriptInputObject, new RsessionOutput(Level.ERROR, baos));
+            String guid = guid(baseParameters);
+            if (!parameterAsBoolean(NO_GUID_OUT_PARAMETER, baseParameters, false)) 
+                stromaResponseWriter.addResponseParameter(GUID_VAR, guid);
+            Object out = executeScripts(scriptList, baseParameters, scriptInputObject, new RsessionOutput(Level.ERROR, baos), guid);
             if (parameterAsBoolean(R_LOG_OUTPUT_PARAMETER, baseParameters, false)) stromaResponseWriter.addResponseParameter(
                     R_LOG_OUTPUT_PARAMETER, new String(baos.toByteArray(), "UTF-8"));
             if (parameterAsBoolean(USE_MAP_CHANNEL_PARAMETER, baseParameters, false)) {
@@ -161,8 +168,9 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
         if (healthCheckCommand == null) return true;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
+            Map<String, List<String>> dummyBaseParameters = new HashMap<String, List<String>>();
             Object returnObject = executeScripts(Arrays.asList(healthCheckCommand), new HashMap<String, List<String>>(), null, 
-                    new RsessionOutput(Level.ERROR, baos));
+                    new RsessionOutput(Level.ERROR, baos), guid(dummyBaseParameters));
             if (returnObject.toString().indexOf(healthCheckValidationTerm) < 0) 
                 throw new Exception(eLabel + "Term not found: [" + healthCheckValidationTerm + "] in [" + returnObject + "]");
             return true;
@@ -214,6 +222,7 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
     public static final String OUTPUT_NATIVE_JAVA_PARAMETER             = "output-native-java";
     public static final String R_HOME_PROPERTY                          = "r_home";
     public static final String GUID_VAR                                 = "guid";
+    public static final String NO_GUID_OUT_PARAMETER                    = "no-guid-out";
     public static final String RESTFS_VAR                               = "restfs";
     public static final String R_LOG_LEVEL_PROPERTY                     = "r_log_level";
     public static final String R_LOG_OUTPUT_PARAMETER                   = "r-log-out";

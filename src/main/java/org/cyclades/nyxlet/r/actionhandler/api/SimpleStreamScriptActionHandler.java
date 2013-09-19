@@ -97,8 +97,11 @@ public abstract class SimpleStreamScriptActionHandler extends SimpleScriptAction
                 haveScript = true;
             }
             if (!haveScript) throw new Exception("No input script found to execute.");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();            
-            Object out = executeScripts(scriptList, baseParameters, scriptInputObject, new RsessionOutput(Level.ERROR, baos));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();    
+            String guid = guid(baseParameters);
+            if (!parameterAsBoolean(NO_GUID_OUT_PARAMETER, baseParameters, false)) 
+                stromaResponseWriter.addResponseParameter(GUID_VAR, guid);
+            Object out = executeScripts(scriptList, baseParameters, scriptInputObject, new RsessionOutput(Level.ERROR, baos), guid);
             if (parameterAsBoolean(BINARY_RESPONSE_PARAMETER, baseParameters, false)) {
                 nyxletSession.getOutputStream().write((byte[])out);
                 binaryResponse = true;
