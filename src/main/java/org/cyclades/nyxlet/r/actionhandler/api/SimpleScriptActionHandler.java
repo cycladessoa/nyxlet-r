@@ -37,6 +37,7 @@ import java.util.Vector;
 import javax.xml.stream.XMLStreamWriter;
 import org.cyclades.engine.MetaTypeEnum;
 import org.cyclades.engine.NyxletSession;
+import org.cyclades.engine.api.Nyxlet;
 import org.cyclades.engine.nyxlet.templates.stroma.STROMANyxlet;
 import org.cyclades.engine.nyxlet.templates.stroma.actionhandler.ActionHandler;
 import org.cyclades.engine.stroma.STROMAResponseWriter;
@@ -127,7 +128,8 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             List<String> scriptList = new ArrayList<String>();
             if (baseParameters.containsKey(SCRIPT_URI_PARAMETER)) {
                 for (String scriptURI : baseParameters.get(SCRIPT_URI_PARAMETER)) 
-                    scriptList.add(new String(ResourceRequestUtils.getData(scriptURI, null), "UTF-8"));
+                    scriptList.add(new String(ResourceRequestUtils.getData(
+                            Nyxlet.getEngineContext().getCanonicalEngineDirectoryPath(scriptURI), null), "UTF-8"));
             }
             if (baseParameters.containsKey(SCRIPT_PARAMETER)) {
                 if (parameterAsBoolean(RUN_SCRIPT_FIRST_PARAMETER, baseParameters, false)) {

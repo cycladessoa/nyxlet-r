@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import javax.xml.stream.XMLStreamWriter;
 import org.cyclades.engine.NyxletSession;
+import org.cyclades.engine.api.Nyxlet;
 import org.cyclades.engine.nyxlet.templates.stroma.STROMANyxlet;
 import org.cyclades.engine.stroma.STROMAResponseWriter;
 import org.cyclades.engine.validator.ParameterMatches;
@@ -76,7 +77,8 @@ public abstract class SimpleStreamScriptActionHandler extends SimpleScriptAction
             // Add URI source scripts
             if (baseParameters.containsKey(SCRIPT_URI_PARAMETER)) {
                 for (String scriptURI : baseParameters.get(SCRIPT_URI_PARAMETER)) 
-                    scriptList.add(new String(ResourceRequestUtils.getData(scriptURI, null), "UTF-8"));
+                    scriptList.add(new String(ResourceRequestUtils.getData(
+                            Nyxlet.getEngineContext().getCanonicalEngineDirectoryPath(scriptURI), null), "UTF-8"));
                 haveScript = true;
             }
             // Add InputStream source scripts
