@@ -124,7 +124,8 @@ public abstract class SimpleScriptActionHandler extends ActionHandler {
             /********************************************************************/
             Object scriptInputObject = (nyxletSession.containsMapChannelKey(INPUT_PARAMETER)) ? 
                     nyxletSession.getMapChannelObject(INPUT_PARAMETER) : 
-                        baseParameters.containsKey(INPUT_PARAMETER) ? baseParameters.get(INPUT_PARAMETER).toArray() : null;
+                        baseParameters.containsKey(INPUT_PARAMETER) ? baseParameters.get(INPUT_PARAMETER).toArray(new String[0]) :
+                            null;
             List<String> scriptList = new ArrayList<String>();
             if (baseParameters.containsKey(SCRIPT_URI_PARAMETER)) {
                 for (String scriptURI : baseParameters.get(SCRIPT_URI_PARAMETER)) 

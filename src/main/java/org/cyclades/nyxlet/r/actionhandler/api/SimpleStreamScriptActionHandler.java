@@ -71,7 +71,8 @@ public abstract class SimpleStreamScriptActionHandler extends SimpleScriptAction
             /********************************************************************/
             Object scriptInputObject = (nyxletSession.containsMapChannelKey(INPUT_PARAMETER)) ? 
                     nyxletSession.getMapChannelObject(INPUT_PARAMETER) : 
-                        baseParameters.containsKey(INPUT_PARAMETER) ? baseParameters.get(INPUT_PARAMETER).toArray() : null;
+                        baseParameters.containsKey(INPUT_PARAMETER) ? baseParameters.get(INPUT_PARAMETER).toArray(new String[0]) :
+                            null;
             List<String> scriptList = new ArrayList<String>();
             Boolean haveScript = false;
             // Add URI source scripts
